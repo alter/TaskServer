@@ -1,1 +1,1 @@
-require_relative '../server/tqueue.rb'
+require_relative '../library/tqueue.rb'
