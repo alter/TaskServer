@@ -1,7 +1,4 @@
 #!/usr/bin/env ruby
-
-dirname = File.basename(Dir.getwd)
-p dirname
-require "#{dirname}../library/tqueue.rb"
+require_relative '../library/tqueue.rb'
 
 queue = TQueue.new
