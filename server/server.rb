@@ -1,6 +1,7 @@
 #!/usr/bin/env ruby
 require_relative '../library/tqueue.rb'
 require 'web_socket'
+require 'yaml'
 
 Thread.abort_on_exception = true
 #WebSocket.debug = true
@@ -27,19 +28,24 @@ server.run() do |ws|
   puts("Path: #{ws.path}, Origin: #{ws.origin}")
   if ws.path == "/"
     ws.handshake()
-    while data = ws.receive()
-      if match = data.match(push_regex)
-        task = match.captures.first
-        queue.push(task)
-      elsif match = data.match(list_regex)
-        ws.send(queue.list)
-      elsif match = data.match(pull_regex)
-        ws.send(queue.pull)
-      elsif match = data.match(remove_regex)
-        task = match.captures.first.to_s
-        ws.send(queue.remove(task))
-      elsif match = data.match(size_regex)
-        ws.send(queue.size.to_s)
+    while data = YAML::load(ws.receive())
+      unpacked_data = data[0]
+      if unpacked_data.is_a?Hash
+        unpacked_data.each{|key,value|
+          if key == 'push'
+            queue.push(value)
+          elsif key == 'remove'
+            queue.remove(value)
+          end  
+        }
+      elsif unpacked_data.is_a?String
+        if unpacked_data == 'list'
+          ws.send(queue.list)
+        elsif unpacked_data == 'pull' 
+          ws.send(queue.pull)
+        elsif unpacked_data == 'size' 
+          ws.send(queue.size.to_s)
+        end
       end
       puts "Current queue list: #{queue.list}"
       printf("Server receive: %p\n", data)

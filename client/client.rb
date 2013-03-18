@@ -1,28 +1,20 @@
 #!/usr/bin/env ruby
 require "web_socket"
+require 'yaml'
 
 host = 'ws://127.0.0.1:50000/'
 
 client = WebSocket.new(host)
 puts("Connected")
 
-client.send('push: task1')
-client.send('push: task2')
-client.send('list')
-client.send('size')
-client.send('push: task3')
-client.send('pull')
-client.send('push: task4')
-client.send('list')
-client.send('remove: 0')
-client.send('remove: 0')
-client.send('remove: 0')
-client.send('remove: 0')
-client.send('remove: 0')
-client.send('push: task5')
-client.send('push: task6')
-client.send('size')
-client.send('list')
+task = [{push:"task1"}]
+client.send(task.to_yaml)
+task = [{push:"task2"}]
+client.send(task.to_yaml)
+task = [{push:"task3"}]
+client.send(task.to_yaml)
+task = ['list']
+client.send(task.to_yaml)
 
 
 Thread.new() do
@@ -39,3 +31,4 @@ $stdin.each_line() do |line|
 end
 
 client.close()
+puts("Disconnected")
