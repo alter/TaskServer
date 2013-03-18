@@ -26,7 +26,7 @@ class TQueue
 
   # remove task from queue by its id and return size of queue
   def remove(number)
-    @@queue.delete_at(Integer(number))
+    @@queue.size != 0 ? @@queue.delete_at(Integer(number)) : 0.to_s 
   end
   
   # return size of queue  
