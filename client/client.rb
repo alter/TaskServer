@@ -1,55 +1,33 @@
 #!/usr/bin/env ruby
-require "socket"
-require 'libwebsocket'
+require "web_socket"
 
-class WSocket
-  def initialize(url, params = {})
-    @hs ||= LibWebSocket::OpeningHandshake::Client.new(:url => url,
-        :version => params[:version])
-    @frame ||= LibWebSocket::Frame.new
+host = 'ws://127.0.0.1:50000/'
 
-    @socket = TCPSocket.new(@hs.url.host, @hs.url.port || 8080)
+client = WebSocket.new(host)
+puts("Connected")
 
-    @socket.write(@hs.to_s)
-    @socket.flush
+client.send('push: task1')
+client.send('push: task2')
+client.send('list')
+client.send('size')
+client.send('push: task3')
+client.send('pull')
+client.send('list')
+client.send('remove: 0')
+client.send('list')
 
-    loop do
-      data = @socket.getc
-      next if data.nil?
 
-      result = @hs.parse(data.chr)
-      raise @hs.error unless result
-
-      if @hs.done?
-        @handshaked = true
-        break
-      end
-    end
+Thread.new() do
+  while data = client.receive()
+    printf("Client received: %p\n", data)
   end
-
-  def send(data)
-    raise "no handshake!" unless @handshaked
-
-    data = @frame.new(data).to_s
-    @socket.write data
-    @socket.flush
-  end
-
-  def receive
-    raise "no handshake!" unless @handshaked
-
-    data = @socket.gets("\xff")
-    @frame.append(data)
-
-    messages = []
-    while message = @frame.next
-      messages << message
-    end
-    messages
-  end
+  exit()
 end
 
-ws = WSocket.new('ws://127.0.0.1:8080')
-ws.send('test')
-puts ws.receive
+$stdin.each_line() do |line|
+  data = line.chomp()
+  client.send(data)
+  printf("Client sent: %p\n", data)
+end
 
+client.close()
