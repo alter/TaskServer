@@ -1,5 +1,5 @@
 #!/usr/bin/env ruby
-require "web_socket"
+require 'em-websocket'
 require 'yaml'
 
 host = 'ws://127.0.0.1:50000/'
@@ -21,6 +21,5 @@ client.send(task.to_yaml)
 while data = client.receive()
   printf("Client received: %p\n", data)
 end
-
 client.close()
 puts("Disconnected")
