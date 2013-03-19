@@ -21,6 +21,7 @@ Thread.new() do
   while data = client.receive()
     printf("Client received: %p\n", data)
   end
+  client.close()
   exit()
 end
 
