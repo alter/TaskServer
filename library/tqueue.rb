@@ -18,8 +18,8 @@ class TQueue
   # return tasks as hash
   def list()
     output = {}
-    @@queue.each { |task|
-      output[@@queue.index(task)] = task
+    @@queue.each_with_index { |task, index|
+      output[index] = task
     }
     return output
   end
