@@ -21,7 +21,7 @@ describe TQueue do
   end
   
   it "should take task from queue" do
-    current_task = @queue.pull
+    current_task = @queue.pop
     puts "current task: #{current_task}"
   end
   
