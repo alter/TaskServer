@@ -1,25 +1,35 @@
 #!/usr/bin/env ruby
 require 'em-websocket'
+require 'faye/websocket'
+require 'eventmachine'
 require 'yaml'
 
 host = 'ws://127.0.0.1:50000/'
 
-client = WebSocket.new(host)
-puts("Connected")
+EM.run {
+  ws = Faye::WebSocket::Client.new(host)
 
-task = {cmd:"push", arg:"test0"}
-client.send(task.to_yaml)
-task = {cmd:"push", arg:"test1"}
-client.send(task.to_yaml)
-task = {cmd:"push", arg:"test2"}
-client.send(task.to_yaml)
-task = {cmd:"list"}
-client.send(task.to_yaml)
-task = {cmd:"size"}
-client.send(task.to_yaml)
+  ws.onopen = lambda do |event|
+    p [:open]
+    task = {cmd:"push", arg:"test0"}
+    ws.send(task.to_yaml)
+    task = {cmd:"push", arg:"test1"}
+    ws.send(task.to_yaml)
+    task = {cmd:"push", arg:"test2"}
+    ws.send(task.to_yaml)
+    task = {cmd:"list"}
+    ws.send(task.to_yaml)
+    task = {cmd:"size"}
+    ws.send(task.to_yaml)
+  end
 
-while data = client.receive()
-  printf("Client received: %p\n", data)
-end
-client.close()
-puts("Disconnected")
+  ws.onmessage = lambda do |event|
+    p [:message, event.data]
+  end
+
+  ws.onclose = lambda do |event|
+    p [:close, event.code, event.reason]
+    ws = nil
+  end
+}
+
