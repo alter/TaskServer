@@ -9,7 +9,7 @@ class TQueue
   end
 
   # get task from last position in array
-  def pull()
+  def pop()
     task_current = @@queue[-1]
     @@queue.delete_at(-1)
     return task_current

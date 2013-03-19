@@ -5,8 +5,10 @@ require 'yaml'
 
 Thread.abort_on_exception = true
 #WebSocket.debug = true
+DEBUG = true
 
-queue = TQueue.new
+tqueue = TQueue.new
+queue = Queue.new
 
 localhost = '127.0.0.1'
 port = 50000
@@ -18,7 +20,7 @@ server = WebSocketServer.new(
  
 push_regex    = Regexp.compile('^push:\s?(.*)$')
 list_regex    = Regexp.compile('^list$')
-pull_regex    = Regexp.compile('^pull$')
+pop_regex    = Regexp.compile('^pop$')
 remove_regex  = Regexp.compile('^remove:\s?([0-9]{1,5})$')
 size_regex    = Regexp.compile('^size$')
 
@@ -31,22 +33,22 @@ server.run() do |ws|
     while data = YAML::load(ws.receive())
       if data.is_a?Hash
         data.each{|key,value|
-          puts "#{key} === #{value}"
+          puts "#{key} === #{value}" if DEBUG == true
           if key == :cmd && value == "push"
-            puts "data: #{data[:arg]}"
-            queue.push(data[:arg])
+            puts "data: #{data[:arg]}" if DEBUG == true
+            tqueue.push(data[:arg])
           elsif key == :cmd && value == 'remove'
-            queue.remove(data[:arg])
+            tqueue.remove(data[:arg])
           elsif key == :cmd && value == "list"
-            ws.send(queue.list)
-          elsif key == :cmd && value == "pull"
-            ws.send(queue.pull)
+            ws.send(tqueue.list)
+          elsif key == :cmd && value == "pop"
+            ws.send(tqueue.pop)
           elsif key == :cmd && value == "size"
-            ws.send(queue.size.to_s)
+            ws.send(tqueue.size.to_s)
           end  
         }
-      puts "Current queue list: #{queue.list}"
-      printf("Server receive: %p\n", data)
+      puts "Current tqueue list: #{tqueue.list}" if DEBUG == true
+      printf("Server receive: %p\n", data) if DEBUG == true
       end
     end
   else
