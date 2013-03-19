@@ -7,13 +7,13 @@ host = 'ws://127.0.0.1:50000/'
 client = WebSocket.new(host)
 puts("Connected")
 
-task = [{push:"task1"}]
+task = {cmd:"push", arg:"test0"}
 client.send(task.to_yaml)
-task = [{push:"task2"}]
+task = {cmd:"push", arg:"test1"}
 client.send(task.to_yaml)
-task = [{push:"task3"}]
+task = {cmd:"push", arg:"test2"}
 client.send(task.to_yaml)
-task = ['list']
+task = {cmd:"list"}
 client.send(task.to_yaml)
 
 

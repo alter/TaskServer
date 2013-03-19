@@ -29,26 +29,25 @@ server.run() do |ws|
   if ws.path == "/"
     ws.handshake()
     while data = YAML::load(ws.receive())
-      unpacked_data = data[0]
-      if unpacked_data.is_a?Hash
-        unpacked_data.each{|key,value|
-          if key == 'push'
-            queue.push(value)
-          elsif key == 'remove'
-            queue.remove(value)
+      if data.is_a?Hash
+        data.each{|key,value|
+          puts "#{key} === #{value}"
+          if key == :cmd && value == "push"
+            puts "data: #{data[:arg]}"
+            queue.push(data[:arg])
+          elsif key == :cmd && value == 'remove'
+            queue.remove(data[:arg])
+          elsif key == :cmd && value == "list"
+            ws.send(queue.list)
+          elsif key == :cmd && value == "pull"
+            ws.send(queue.pull)
+          elsif key == :cmd && value == "size"
+            ws.send(queue.size.to_s)
           end  
         }
-      elsif unpacked_data.is_a?String
-        if unpacked_data == 'list'
-          ws.send(queue.list)
-        elsif unpacked_data == 'pull' 
-          ws.send(queue.pull)
-        elsif unpacked_data == 'size' 
-          ws.send(queue.size.to_s)
-        end
-      end
       puts "Current queue list: #{queue.list}"
       printf("Server receive: %p\n", data)
+      end
     end
   else
     ws.handshake("404 Not Found")
