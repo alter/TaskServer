@@ -1,35 +1,28 @@
 #!/usr/bin/env ruby
-require 'em-websocket'
-require 'faye/websocket'
-require 'eventmachine'
+# encoding: ASCII-8BIT
+
 require 'yaml'
+require 'thread'
+require 'socket'
+require 'logger'
 
-host = 'ws://127.0.0.1:50000/'
+PORT = 50000
+ARRD = '127.0.0.1'
 
-EM.run {
-  ws = Faye::WebSocket::Client.new(host)
+socket = TCPSocket.new(ARRD, PORT)
+socket.set_encoding 'ASCII-8BIT'
 
-  ws.onopen = lambda do |event|
-    p [:open]
-    task = {cmd:"push", arg:"test0"}
-    ws.send(task.to_yaml)
-    task = {cmd:"push", arg:"test1"}
-    ws.send(task.to_yaml)
-    task = {cmd:"push", arg:"test2"}
-    ws.send(task.to_yaml)
-    task = {cmd:"list"}
-    ws.send(task.to_yaml)
-    task = {cmd:"size"}
-    ws.send(task.to_yaml)
-  end
+task = {cmd:"push", arg:"test0"}
+socket.puts(task.to_yaml)
+task = {cmd:"push", arg:"test1"}
+socket.puts(task.to_yaml)
+task = {cmd:"push", arg:"test2"}
+socket.puts(task.to_yaml)
+task = {cmd:"list"}
+socket.puts(task.to_yaml)
+task = {cmd:"size"}
+socket.puts(task.to_yaml)
 
-  ws.onmessage = lambda do |event|
-    p [:message, event.data]
-  end
-
-  ws.onclose = lambda do |event|
-    p [:close, event.code, event.reason]
-    ws = nil
-  end
-}
-
+while unpacked_data = YAML::load(socket.gets())
+  puts unpacked_data
+end

@@ -1,52 +1,60 @@
 #!/usr/bin/env ruby
+# encoding: ASCII-8BIT
+
 require_relative '../library/tqueue.rb'
-require 'em-websocket'
 require 'yaml'
 require 'thread'
+require 'logger'
+require 'socket'
 
 $DEBUG = true
-
 Thread.abort_on_exception = $DEBUG
-
+ADDR = '0.0.0.0'
+PORT = 50000
+PROGRAM_PATH = "/home/a1/GPT_launcher/launcher.py"
 tqueue = TQueue.new
-queue = Queue.new
+  
+server = TCPServer.new(ADDR, PORT)
+log = Logger.new('./server.log')
 
-EM.run {
-  EM::WebSocket.run(:host => "0.0.0.0", :port => 50000) do |ws|
-    ws.onopen { |handshake|
-      puts "WebSocket connection open"
+log.info "***********************************************"
+log.info "* Logserver has been started at #{ADDR}:#{PORT}* "
+log.info "***********************************************"
 
-      # Access properties on the EM::WebSocket::Handshake object, e.g.
-      # path, query_string, origin, headers
+loop do
+  socket = server.accept
+  socket.set_encoding 'ASCII-8BIT'
+  Thread.start do
+    port = socket.peeraddr[1]
+    name = socket.peeraddr[2]
 
-      # Publish message to the client
-      ws.send "Hello Client, you connected to #{handshake.path}"
-    }
-
-    ws.onclose { puts "Connection closed" }
-    ws.onmessage { |data|
-      while data = YAML::load(ws.receive())
-        if data.is_a?Hash
-          data.each{ |key,value|
-            puts "key: #{key} | value: #{value}" if $DEBUG == true
-            if key == :cmd && value == "push"
-              puts "Argument: #{data[:arg]}" if $DEBUG == true
-              tqueue.push(data[:arg])
-            elsif key == :cmd && value == 'remove'
-              tqueue.remove(data[:arg])
-            elsif key == :cmd && value == "list"
-              ws.send(tqueue.list)
-            elsif key == :cmd && value == "pop"
-              ws.send(tqueue.pop)
-            elsif key == :cmd && value == "size"
-              ws.send(tqueue.size.to_s)
-            end  
-          }
-        puts "Current tqueue list: #{tqueue.list}" if $DEBUG == true
-        puts "Current tqueue size: #{tqueue.size}" if $DEBUG == true
-        printf("Server receive: %p\n", data) if $DEBUG == true
+    log.info "Recieving connection from #{name}:#{port}"
+      begin
+        while unpacked_data = YAML::load(socket.gets)
+          puts unpacked_data if $DEBUG == true
+          log.info "Recieving #{unpacked_data} from #{name}:#{port}"
+          if unpacked_data.is_a?Hash
+            unpacked_data.each{ |key,value|
+              puts "key: #{key} | value: #{value}" if $DEBUG == true
+              if key == :cmd && value == "push"
+                puts "Argument: #{unpacked_data[:arg]}" if $DEBUG == true
+                tqueue.push(unpacked_data[:arg])
+              elsif key == :cmd && value == 'remove'
+                tqueue.remove(unpacked_data[:arg])
+              elsif key == :cmd && value == "list"
+                socket.puts(tqueue.list.to_yaml)
+              elsif key == :cmd && value == "pop"
+                socket.puts(tqueue.pop.to_yaml)
+              elsif key == :cmd && value == "size"
+                socket.puts(tqueue.size.to_yaml)
+              end  
+            }
+          end
         end
-      end
-    }
+        rescue ClientQuitError
+          log.error "*** #{name}:#{port} disconnected"
+        ensure 
+          socket.close()
+      end    
   end
-}
+end
