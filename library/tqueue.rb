@@ -1,36 +1,36 @@
 class TQueue
-  @@queue = Array.new
+  @@queue = {}
   
   # add task to the first position in array
-  def push(task)
+  def push(id, task)
     if task != nil
-      @@queue.unshift(task)
+      @@queue[id] = task
     end
   end
 
   # get task from last position in array
   def pop()
-    task_current = @@queue[-1]
-    @@queue.delete_at(-1)
-    return task_current
+    if @@queue.first.nil?
+      return
+    else
+      task_hash = @@queue.first
+      id = task_hash[0]
+      @@queue.delete(id)
+      return task_hash
+    end
   end
     
   # return tasks as hash
   def list()
-    output = {}
-    @@queue.each_with_index { |task, index|
-      output[index] = task
-    }
-    return output
+    return @@queue
   end
 
   # remove task from queue by its id and return size of queue
-  def remove(number)
-    @@queue.size != 0 ? @@queue.delete_at(Integer(number)) : 0.to_s 
+  def remove(id)
+    @@queue.size != 0 ? @@queue.delete(Integer(id)) : 0.to_s
   end
-  
-  # return size of queue  
-  def size()
+
+  def size
     return @@queue.size
   end
 end

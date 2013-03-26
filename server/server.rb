@@ -23,11 +23,13 @@ def read_data(socket)
   YAML.load(socket.read(length))
 end
 
-task = {cmd:"push", arg:"test0"}
+task = {id: 1, cmd:"push", arg:"test0"}
 send_data(socket, task)
-task = {cmd:"push", arg:"test1"}
+task = {id: 2, cmd:"push", arg:"test1"}
 send_data(socket, task)
-task = {cmd:"push", arg:"test2"}
+task = {id: 3, cmd:"push", arg:"test2"}
+send_data(socket, task)
+task = {id: 4, cmd:"push", arg:"test4"}
 send_data(socket, task)
 task = {cmd:"pop"}
 send_data(socket, task)
@@ -35,7 +37,11 @@ task = {cmd:"list"}
 send_data(socket, task)
 task = {cmd:"size"}
 send_data(socket, task)
+task = {cmd:"quit"}
+send_data(socket, task)
 
 loop do
   p read_data(socket)
 end
+
+socket.close()
