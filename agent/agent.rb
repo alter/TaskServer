@@ -6,14 +6,17 @@ require 'yaml'
 require 'thread'
 require 'logger'
 require 'socket'
+require 'open3'
 
 $DEBUG = true
 Thread.abort_on_exception = $DEBUG
 ADDR = '0.0.0.0'
 PORT = 50000
 PROGRAM_PATH = "/home/a1/GPT_launcher/launcher.py"
+
 tqueue = TQueue.new
-  
+threads = []
+
 def send_data(socket, data)
   packed_data = YAML.dump(data)
   socket.write([packed_data.length].pack("I"))
@@ -24,6 +27,16 @@ def read_data(socket)
   length = socket.read(4).unpack("I")[0]
   YAML.load(socket.read(length))
 end
+
+run_tasks = proc { 
+  threads = [ 
+    Thread.new {
+      arg = tqueue.pop
+      
+    } 
+  ]
+}
+
 server = TCPServer.new(ADDR, PORT)
 
 log = Logger.new('./agent.log')
