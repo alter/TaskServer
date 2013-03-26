@@ -12,17 +12,30 @@ ARRD = '127.0.0.1'
 socket = TCPSocket.new(ARRD, PORT)
 socket.set_encoding 'ASCII-8BIT'
 
-task = {cmd:"push", arg:"test0"}
-socket.puts(task.to_yaml)
-task = {cmd:"push", arg:"test1"}
-socket.puts(task.to_yaml)
-task = {cmd:"push", arg:"test2"}
-socket.puts(task.to_yaml)
-task = {cmd:"list"}
-socket.puts(task.to_yaml)
-task = {cmd:"size"}
-socket.puts(task.to_yaml)
+def send_data(socket, data)
+  packed_data = YAML.dump(data)
+  socket.write([packed_data.length].pack("I"))
+  socket.write(packed_data)
+end
 
-while unpacked_data = YAML::load(socket.gets())
-  puts unpacked_data
+def read_data(socket)
+  length = socket.read(4).unpack("I")[0]
+  YAML.load(socket.read(length))
+end
+
+task = {cmd:"push", arg:"test0"}
+send_data(socket, task)
+task = {cmd:"push", arg:"test1"}
+send_data(socket, task)
+task = {cmd:"push", arg:"test2"}
+send_data(socket, task)
+task = {cmd:"pop"}
+send_data(socket, task)
+task = {cmd:"list"}
+send_data(socket, task)
+task = {cmd:"size"}
+send_data(socket, task)
+
+loop do
+  p read_data(socket)
 end
