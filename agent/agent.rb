@@ -14,7 +14,7 @@ ADDR = '0.0.0.0'
 PORT = 50000
 
 if $DEBUG
-  PROGRAM_PATH = "/bin/sleep 3 && /bin/echo"
+  PROGRAM_PATH = "ls -a /tmp"
 else
   PROGRAM_PATH = "/home/a1/GPT_launcher/launcher.py"
 
@@ -39,7 +39,12 @@ end
 def runner
   if $tqueue.size != 0
     id, arg = $tqueue.pop
-    stdin, stdout, stderr = Open3.popen3("#{PROGRAM_PATH} #{arg}")
+    #stdin, stdout, stderr = Open3.popen3("#{PROGRAM_PATH}/#{arg}")
+    stdout, stderr, status = Open3.capture3("#{PROGRAM_PATH}/#{arg}")
+    puts stdout
+    if status.success?
+      puts "It's success !!"
+    end
     $log.info "running task with id = #{id} and arg = #{arg}"
     $log.error "stderr: #{stderr}"
     $queue.push({id:stderr})
