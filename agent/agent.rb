@@ -14,7 +14,7 @@ ADDR = '0.0.0.0'
 PORT = 50000
 
 if $DEBUG
-  PROGRAM_PATH = "ls -a /tmp"
+  PROGRAM_PATH = "sleep 5 && ls1 -a /tmp"
 else
   PROGRAM_PATH = "/home/a1/GPT_launcher/launcher.py"
 
@@ -47,7 +47,7 @@ def runner
     end
     $log.info "running task with id = #{id} and arg = #{arg}"
     $log.error "stderr: #{stderr}"
-    $queue.push({id:stderr})
+    $queue.push({id:id,stderr:stderr,success:status.success?,status:status})
   else
       return 1
   end
@@ -72,9 +72,8 @@ $log.info "* $logserver has been started at #{ADDR}:#{PORT} *"
 $log.info "***********************************************"
 
 loop do
-  socket = server.accept
-  socket.set_encoding 'ASCII-8BIT'
-  Thread.start do
+  Thread.start(server.accept) do |socket|
+#  socket.set_encoding 'UTF-8'
     port = socket.peeraddr[1]
     ip = socket.peeraddr[2]
     $log.info "Receiving connection from #{ip}:#{port}"
@@ -94,6 +93,8 @@ loop do
               send_data(socket, $tqueue.pop)
             elsif key == :cmd && value == "size"
               send_data(socket, $tqueue.size)
+            elsif key == :cmd && value == "status"
+              send_data(socket, $queue.pop)
             elsif key == :cmd && value == "quit"
               Thread.stop
               Thread.exit
@@ -104,8 +105,8 @@ loop do
           end
         end
       end
-    rescue ClientQuitError
-      $log.error "Client #{ip}:#{port} has been disconnected with error"
+    rescue Exception => myException
+      $log.error "Exception rescued : #{myException}"
     ensure 
       socket.close
       $log.info "Client #{ip}:#{port} has been disconnected"

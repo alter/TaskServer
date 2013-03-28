@@ -10,7 +10,7 @@ PORT = 50000
 ARRD = '127.0.0.1'
 
 socket = TCPSocket.new(ARRD, PORT)
-socket.set_encoding 'ASCII-8BIT'
+#socket.set_encoding 'UTF-8'
 
 def send_data(socket, data)
   packed_data = YAML.dump(data)
@@ -22,6 +22,7 @@ def read_data(socket)
   length = socket.read(4).unpack("I")[0]
   YAML.load(socket.read(length))
 end
+
 
 task = {id: 1, cmd:"push", arg:"test0"}
 send_data(socket, task)
@@ -37,6 +38,9 @@ task = {cmd:"list"}
 send_data(socket, task)
 task = {cmd:"size"}
 send_data(socket, task)
+
+task = {cmd: "status"}
+send_data(socket,task)
 task = {cmd:"quit"}
 send_data(socket, task)
 
