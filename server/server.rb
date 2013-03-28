@@ -10,7 +10,6 @@ PORT = 50000
 ARRD = '127.0.0.1'
 
 socket = TCPSocket.new(ARRD, PORT)
-#socket.set_encoding 'UTF-8'
 
 def send_data(socket, data)
   packed_data = YAML.dump(data)
@@ -19,33 +18,44 @@ def send_data(socket, data)
 end
 
 def read_data(socket)
-  length = socket.read(4).unpack("I")[0]
-  YAML.load(socket.read(length))
+  chunk = socket.read(4)
+  if chunk.nil?
+    return 1
+  else
+    length = chunk.unpack("I")[0]
+    data = socket.read(length)
+    data && (YAML.load(data))
+  end
 end
 
 
-task = {id: 1, cmd:"push", arg:"test0"}
+task = {id: 1, cmd:"push", arg:"test5"}
 send_data(socket, task)
-task = {id: 2, cmd:"push", arg:"test1"}
+
+task = {id: 2, cmd:"push", arg:"test6"}
 send_data(socket, task)
-task = {id: 3, cmd:"push", arg:"test2"}
+
+task = {id: 3, cmd:"push", arg:"test7"}
 send_data(socket, task)
-task = {id: 4, cmd:"push", arg:"test4"}
+
+task = {id: 4, cmd:"push", arg:"test8"}
 send_data(socket, task)
+
 task = {cmd:"pop"}
 send_data(socket, task)
+
 task = {cmd:"list"}
 send_data(socket, task)
+
 task = {cmd:"size"}
 send_data(socket, task)
 
 task = {cmd: "status"}
 send_data(socket,task)
-task = {cmd:"quit"}
-send_data(socket, task)
 
-loop do
-  p read_data(socket)
-end
+begin
+  data = read_data(socket)
+  p data
+end until data != 1
 
-socket.close()
+ap "Cicle"

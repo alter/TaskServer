@@ -7,14 +7,16 @@ require 'thread'
 require 'logger'
 require 'socket'
 require 'open3'
+#require 'gserver'
 
+#class agent < GServer
 $DEBUG = true
 Thread.abort_on_exception = $DEBUG
 ADDR = '0.0.0.0'
 PORT = 50000
 
 if $DEBUG
-  PROGRAM_PATH = "sleep 5 && ls1 -a /tmp"
+  PROGRAM_PATH = "sleep 5 && ls -a /tmp"
 else
   PROGRAM_PATH = "/home/a1/GPT_launcher/launcher.py"
 
@@ -31,10 +33,16 @@ def send_data(socket, data)
 end
 
 def read_data(socket)
-  length = socket.read(4).unpack("I")[0]
-  data = socket.read(length)
-  data != nil ? YAML.load(data) : nil
+  chunk = socket.read(4)
+  if chunk.nil?
+    return 1
+  else
+    length = chunk.unpack("I")[0]
+    data = socket.read(length)
+    data && (YAML.load(data))
+  end
 end
+
 
 def runner
   if $tqueue.size != 0
@@ -68,7 +76,7 @@ server = TCPServer.new(ADDR, PORT)
 
 $log = Logger.new('./agent.log')
 $log.info "***********************************************"
-$log.info "* $logserver has been started at #{ADDR}:#{PORT} *"
+$log.info "* Agent has been started at #{ADDR}:#{PORT} *"
 $log.info "***********************************************"
 
 loop do
@@ -94,10 +102,11 @@ loop do
             elsif key == :cmd && value == "size"
               send_data(socket, $tqueue.size)
             elsif key == :cmd && value == "status"
-              send_data(socket, $queue.pop)
+              while (task = $queue.shift(true) rescue nil) do
+                send_data(socket, task)
+              end
             elsif key == :cmd && value == "quit"
-              Thread.stop
-              Thread.exit
+              socket.close
             end
           }
           if $thread == nil or !$thread.alive?
