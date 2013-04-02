@@ -55,7 +55,7 @@ send_data(socket,task)
 
 begin
   data = read_data(socket)
-  p data
+  ap data
 end until data != 1
 
 ap "Cicle"

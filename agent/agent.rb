@@ -71,16 +71,7 @@ class Agent < GServer
   end
 
   def serve(session)
-    run_tasks = proc {
-      $thread = Thread.new {
-        @log.info "Thread inspect: #{Thread.inspect}"
-        @log.info "Thread current status: #{Thread.current.status}"
-        begin
-          flag = runner
-        end until flag != 1
-      }
-      $thread.join
-    }
+
     session.print "Welcome to agent\r\n"
 
     loop do
@@ -91,23 +82,30 @@ class Agent < GServer
         while unpacked_data = read_data(session)
           if unpacked_data.is_a?Hash
             unpacked_data.each{ |key,value|
+
               if key == :cmd && value == "push"
-                @log.info ":cmd='push' :arg='#{unpacked_data[:arg]}'"
+                @log.info ":cmd='#{value}' :arg='#{unpacked_data[:arg]}'"
                 $tqueue.push(unpacked_data[:id], unpacked_data[:arg])
+
               elsif key == :cmd && value == 'remove'
-                @log.info ":cmd='remove' :arg='#{unpacked_data[:arg]}'"
+                @log.info ":cmd='#{value}' :arg='#{unpacked_data[:arg]}'"
                 $tqueue.remove(unpacked_data[:arg])
+
               elsif key == :cmd && value == "list"
+                @log.info ":cmd='#{value}' :arg='#{unpacked_data[:arg]}'" if $DEBUG
                 send_data(session, $tqueue.list)
-              elsif key == :cmd && value == "pop"
-                send_data(session, $tqueue.pop)
+
               elsif key == :cmd && value == "size"
+                @log.info ":cmd='#{value}' :arg='#{unpacked_data[:arg]}'" if $DEBUG
                 send_data(session, $tqueue.size)
+
               elsif key == :cmd && value == "status"
                 while (task = $queue.shift(true) rescue nil) do
                   send_data(session, task)
                 end
+
               elsif key == :cmd && value == "quit"
+                @log.info ":cmd='#{value}' :arg='#{unpacked_data[:arg]}'" if $DEBUG
                 session.close
               end
             }
