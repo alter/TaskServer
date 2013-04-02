@@ -11,6 +11,7 @@ require 'json/pure'
 
 PORT=50000
 HOST='0.0.0.0'
+$thread = nil
 
 class Agent < GServer
   attr_accessor :queue
@@ -19,7 +20,7 @@ class Agent < GServer
   attr_accessor :cmd
   attr_accessor :id
   attr_accessor :arg
-  attr_accessor :thread
+
 
   def initialize(port,host,*args)
     super(port,host,*args)
@@ -27,6 +28,7 @@ class Agent < GServer
     @tqueue = TQueue.new
     @log = Logger.new('./agent.log')
     @log.info "Agent has been started at #{host}:#{port}"
+
   end
 
   def runner
@@ -43,18 +45,19 @@ class Agent < GServer
 
   def serve(session)
     run_tasks = proc {
-      @thread = Thread.new {
+      $thread = Thread.new {
         begin
           flag = runner
+          @log.info "Thread has executed func 'runner', exit code '#{flag}'"
         end until flag != 1
       }
-      @thread.join
+      $thread.join
     }
 
     session.puts "Welcome to server\r\n"
     loop{
       json = JSON.parse *session.gets.chomp.split
-      @log.info "Aget has got json: '#{json}'"
+      @log.info "Agent has got json: '#{json}'"
       @cmd = json[0]['cmd']
       @id  = json[0]['id']
       @arg = json[0]['arg']
@@ -62,8 +65,8 @@ class Agent < GServer
       case @cmd
         when "push"
           begin
-            session.puts "Task #{@arg} has been added to TQueue \r\n"
             @tqueue.push(@id, @arg)
+            session.puts "Task #{@arg} has been added to TQueue \r\n"
           end
         when "remove"
           begin
@@ -93,7 +96,7 @@ class Agent < GServer
         else
           session.puts "Bad command!\r\n"
       end
-      if @thread == nil or !@thread.alive?
+      if $thread == nil || !$thread.alive?
         run_tasks.call
       end
       session.puts "+OK"
